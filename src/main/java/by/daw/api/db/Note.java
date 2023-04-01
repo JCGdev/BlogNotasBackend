@@ -1,5 +1,5 @@
 package by.daw.api.db;
-
+// TODO -> AÑADIR ANOTACIONES JAXB PARA ESTA CLASE
 public class Note {
     private final String userID;
     private final String content;
