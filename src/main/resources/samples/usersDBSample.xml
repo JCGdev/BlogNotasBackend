@@ -8,7 +8,7 @@
         ]>
 
 <users>
-    <user id="u001">
+    <user id="u0001">
         <name>admin</name>
         <password>null</password>
     </user>
