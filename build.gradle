@@ -23,6 +23,9 @@ dependencies {
 
     /* Se declara como dependencia el framework de SpringBoot*/
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '3.0.5'
+    /* Se declara como dependencia la librería de Jakarta JAXB */
+    implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '4.0.0'
+    implementation group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '4.0.2'
 }
 
 test {
