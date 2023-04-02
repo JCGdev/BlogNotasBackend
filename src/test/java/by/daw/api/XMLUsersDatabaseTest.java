@@ -9,6 +9,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+
 public class XMLUsersDatabaseTest {
 
     public XMLUsersDatabaseTest(){
@@ -28,12 +29,18 @@ public class XMLUsersDatabaseTest {
     public void deleteUserTest(){
         UserDatabaseManager dbManager = XMLUsersDatabaseManager.getInstance();
 
-        assertDoesNotThrow( () -> dbManager.addUser("JUNIT2", "JUNIT2"));
+        List<User> users = dbManager.getUsers();
+        User target;
+        if(users.size() > 0) {
+            target = users.get(0);
+        } else {
+            target = dbManager.addUser("JUNIT2", "JUNIT2");
+        }
 
-        assertDoesNotThrow( () -> dbManager.deleteUser("JUNIT2", "JUNIT2"));
+        assertDoesNotThrow( () -> dbManager.deleteUser(target.getName(), target.getPassword()));
 
         assertThrows( UserDoesNotExistException.class,
-                     () -> dbManager.validateLogin("JUNIT2", "JUNIT2"));
+                     () -> dbManager.validateLogin(target.getName(), target.getPassword()));
 
     }
 
