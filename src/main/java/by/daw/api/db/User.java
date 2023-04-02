@@ -58,7 +58,7 @@ public final class User {
         this.password = password;
     }
 
-    @XmlAttribute
+    @XmlAttribute(name = "id")
     public String getId() {
         return id;
     }
