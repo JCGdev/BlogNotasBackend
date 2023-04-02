@@ -17,13 +17,14 @@ public class FileIO {
     public static String read(InputStream inputStream, int bufferSize) {
         BufferedReader reader;
         StringBuilder fileContent = new StringBuilder();
+
         char[] buffer = new char[bufferSize];
+        int charsReaded;
 
         try {
             reader = new BufferedReader(new InputStreamReader(inputStream));
-
-            while(reader.read(buffer) != -1) {
-                fileContent.append(buffer);
+            while((charsReaded = reader.read(buffer)) != -1) {
+                fileContent.append(buffer, 0, charsReaded);
             }
             reader.close();
 
