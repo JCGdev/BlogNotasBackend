@@ -3,6 +3,7 @@ package by.daw.api.db.xml;
 import by.daw.api.db.User;
 import by.daw.api.db.Users;
 import by.daw.api.db.behaviour.UserDatabaseManager;
+import by.daw.api.db.exceptions.RuntimeJAXBException;
 import by.daw.api.db.exceptions.UserAlreadyExistsException;
 import by.daw.api.db.exceptions.UserDoesNotExistException;
 import jakarta.xml.bind.JAXBContext;
@@ -12,6 +13,7 @@ import jakarta.xml.bind.Unmarshaller;
 
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 /*
@@ -19,6 +21,8 @@ import java.util.List;
  * Marshal -> escribir
  * Unmarshal -> leer
  */
+
+// TODO -> Implementar un sistema de valicacion usando DTDs. Apache xerces es una opción
 public class XMLUsersDatabaseManager implements UserDatabaseManager {
     private static XMLUsersDatabaseManager instance;
     private File usersDB;
@@ -68,18 +72,24 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
     /**
      * Devuelve la lista de usuarios
      *
-     * @return Una lista conteniendo los usuarios de la BBDD XML
+     * @throws RuntimeJAXBException si hay algún error en el marshalling o unmarshalling
+     * @return Una lista conteniendo los usuarios de la BBDD
      */
     @Override
-    public List<User> getUsers() throws RuntimeException {
+    public List<User> getUsers() throws RuntimeJAXBException {
         Users users;
         try {
             Unmarshaller unmarshaller = this.jaxbContext.createUnmarshaller();
             users = (Users) unmarshaller.unmarshal(this.usersDB);
 
         } catch(JAXBException e){
-            throw new RuntimeException(e);
+            throw new RuntimeJAXBException(e);
         }
+
+        if(users.getUserList() == null){
+            return new ArrayList<User>();
+        }
+
         return users.getUserList();
     }
 
@@ -87,10 +97,13 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
      *
      * @param username el nombre de usuario
      * @param password la contraseña del usuario
-     * @return EL usuario de la base de datos o null si no se encuentra
+     * @throws RuntimeJAXBException si hay algún error en el marshalling o unmarshalling
+     * @throws UserDoesNotExistException si el usuario no existe
+     * @return EL usuario de la base de datos
      */
     @Override
-    public User validateLogin(String username, String password) {
+    public User validateLogin(String username, String password) throws RuntimeJAXBException,
+                                                                        UserDoesNotExistException{
         User target = null;
         for(User user : this.getUsers()){
             if(user.getName().equals(username) &&
@@ -98,11 +111,24 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
                 target = user;
             }
         }
+
+        if(target == null){
+            throw new UserDoesNotExistException("user: " + username + " does not exist .");
+        }
         return target;
     }
 
 
-    public User matchUserByID(String id){
+    /**
+     * Devuelve el usuario que coincida con ese id
+     *
+     * @param id id del usuario
+     * @throws RuntimeJAXBException si hay algún error en el marshalling o unmarshalling
+     * @throws UserDoesNotExistException si el usuario no existe
+     * @return un Usuario si se encuentra o una runtime Exception en caso de
+     *         que no exista
+     */
+    public User matchUserByID(String id) throws RuntimeJAXBException, UserDoesNotExistException {
         List<User> users = this.getUsers();
         User target = null;
 
@@ -111,6 +137,11 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
                 target = tmpUserInDB;
             }
         }
+
+        if(target == null){
+            throw new UserDoesNotExistException("user with id: " + id  + " does not exist .");
+        }
+
         return target;
     }
 
@@ -119,12 +150,14 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
      *
      * @param username el nombre de usuario
      * @param password la contraseña
+     * @throws RuntimeJAXBException si hay algún error en el marshalling o unmarshalling
+     * @throws UserAlreadyExistsException si el usuario existe
      * @return el usuario creado
      */
     @Override
-    public User addUser(String username, String password) throws UserAlreadyExistsException {
-        if(this.validateLogin(username, password) != null){
-            throw new UserAlreadyExistsException("User already exists!. Aborting registration");
+    public User addUser(String username, String password) throws RuntimeJAXBException, UserAlreadyExistsException {
+        if(this.userExists(username, password)){
+            throw new UserAlreadyExistsException("User " + username + " already exists!");
         }
 
         User newUser = new User(username, password, this.provideNewID());
@@ -143,19 +176,28 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
         return newUser;
     }
 
+    private boolean userExists(String username, String password){
+        try {
+            this.validateLogin(username, password);
+        } catch (UserDoesNotExistException e){
+            return false;
+        }
+        return true;
+    }
+
 
     /**
      * Elimina a un usuario de la base de datos
      *
      * @param username el nombre de usuario
      * @param password la contraseña del usuario
+     * @throws RuntimeJAXBException si hay algún error en el marshalling o unmarshalling
+     * @throws UserDoesNotExistException si no existe el usuario
      */
     @Override
-    public void deleteUser(String username, String password) throws UserAlreadyExistsException {
-        User userToDelete;
-        if ((userToDelete = this.validateLogin(username, password)) == null) {
-            throw new UserDoesNotExistException("User doesn't not exist! Aborting deletion");
-        }
+    public void deleteUser(String username, String password) throws RuntimeJAXBException,
+                                                                    UserDoesNotExistException {
+        User userToDelete = this.validateLogin(username, password);
 
         List<User> usersList = this.getUsers();
         usersList.remove(userToDelete);
@@ -176,26 +218,35 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
      * Devuelve el siguiente ID disponible
      *
      * @return el id disponible
+     *
      */
-    private String provideNewID(){
+    private String provideNewID() {
         // Ejemplo: u0001
         String lastID = this.getLastID();
+        DecimalFormat df = new DecimalFormat("0000");
+
+        if(lastID == null){
+            lastID = "u" + df.format(1);
+        }
+
         String numberPartFromString = lastID.substring(1);
         int numberPart = Integer.parseInt(numberPartFromString);
 
-        DecimalFormat df = new DecimalFormat("0000");
         return "u" + df.format(numberPart+1) ;
     }
 
     /**
      * Devuelve el id del último usuario registrado
      *
-     * @return el id del último usuario
+     * @throws RuntimeJAXBException si hay algún error en el marshalling o unmarshalling
+     * @return el id del último usuario o null si no hay usuarios
      */
-    private String getLastID(){
+    private String getLastID() throws RuntimeJAXBException {
         List<User> users = this.getUsers();
+        if(users.size() < 1){
+            return null;
+        }
         User lastUser = users.get(users.size()-1);
-
         return lastUser.getId();
     }
 
