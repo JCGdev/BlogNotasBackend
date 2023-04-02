@@ -2,6 +2,7 @@ package by.daw.api;
 
 import by.daw.api.db.User;
 import by.daw.api.db.behaviour.UserDatabaseManager;
+import by.daw.api.db.exceptions.UserDoesNotExistException;
 import by.daw.api.db.xml.XMLUsersDatabaseManager;
 import org.junit.jupiter.api.Test;
 import java.util.List;
@@ -27,11 +28,13 @@ public class XMLUsersDatabaseTest {
     public void deleteUserTest(){
         UserDatabaseManager dbManager = XMLUsersDatabaseManager.getInstance();
 
-        dbManager.addUser("JUNIT2", "JUNIT2");
+        assertDoesNotThrow( () -> dbManager.addUser("JUNIT2", "JUNIT2"));
 
         assertDoesNotThrow( () -> dbManager.deleteUser("JUNIT2", "JUNIT2"));
 
-        assertNull(dbManager.validateLogin("JUNIT2", "JUNIT2"));
+        assertThrows( UserDoesNotExistException.class,
+                     () -> dbManager.validateLogin("JUNIT2", "JUNIT2"));
+
     }
 
     @Test
