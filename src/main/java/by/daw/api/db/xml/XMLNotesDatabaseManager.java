@@ -14,8 +14,16 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class XMLNotesDatabaseManager implements NotesDatabaseManager {
+/**
+ * Clase Manager de la bases de datos XML de Notas. Para más detalles sobre
+ * el diseño de la BBDD, eche un vistazo a resources/samples
+ * Este manager depende XMLUsersDatabaseManager, dado que la propia BBDD almacena
+ * IDs de usuarios, por lo que es necesario validarlos. En este caso se ha implementado
+ * con Singletons.
+ *
+ */
 
+public class XMLNotesDatabaseManager implements NotesDatabaseManager {
     private static XMLNotesDatabaseManager instance;
     private File notesDB;
     private final JAXBContext jaxbContext;
@@ -37,7 +45,7 @@ public class XMLNotesDatabaseManager implements NotesDatabaseManager {
     }
 
     /**
-     * Intenta construir un archivo Fil que representa las bases de datos,
+     * Intenta construir un archivo File que representa las bases de datos,
      * valida que esta exista y las asigna a this.usersDB
      *
      * @throws NullPointerException     si la propiedad notesDatabase.path no está definida.

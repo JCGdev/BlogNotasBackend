@@ -23,6 +23,18 @@ import java.util.List;
  */
 
 // TODO -> Implementar un sistema de valicacion usando DTDs. Apache xerces es una opción
+
+/**
+ * Clase Manager de la bases de datos XML de Usuarios. Para más detalles sobre
+ * el diseño de la BBDD, eche un vistazo a resources/samples
+ */
+
+/*
+ * En un proyecto 'real', lo suyo sería usar SAX (Simple API For XML) para
+ * parsear el XML sin cargar el fichero entero en memoria. Por simplicidad
+ * y como el proyecto no tendrá muchos usuarios, no lo implementaré así.
+ */
+
 public class XMLUsersDatabaseManager implements UserDatabaseManager {
     private static XMLUsersDatabaseManager instance;
     private File usersDB;
@@ -61,12 +73,6 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
             throw new IllegalArgumentException("ERROR: " + usersDBPath + " does not exist");
         }
     }
-
-    /*
-     * En un proyecto 'real', lo suyo sería usar SAX (Simple API For XML) para
-     * parsear el XML sin cargar el fichero entero en memoria. Por simplicidad
-     * y como el proyecto no tendrá muchos usuarios, no lo implementaré así.
-     */
 
 
     /**
