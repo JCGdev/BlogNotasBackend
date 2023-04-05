@@ -83,20 +83,33 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
      */
     @Override
     public List<User> getUsers() throws RuntimeJAXBException {
-        Users users;
-        try {
-            Unmarshaller unmarshaller = this.jaxbContext.createUnmarshaller();
-            users = (Users) unmarshaller.unmarshal(this.usersDB);
-
-        } catch(JAXBException e){
-            throw new RuntimeJAXBException(e);
-        }
+        Users users = this.unmarshallUsers();
 
         if(users.getUserList() == null){
             return new ArrayList<User>();
         }
 
         return users.getUserList();
+    }
+
+    /**
+     * Lee los usuarios de de la BBDD XML y las deserializa en
+     * objetos User, contenidos en un objeto Users, que actúa
+     * como wrapper.
+     *
+     * @return Los usuarios contenidas en una instancia Users
+     */
+    private Users unmarshallUsers() {
+        Users users;
+        try {
+            Unmarshaller unmarshaller = this.jaxbContext.createUnmarshaller();
+            users = (Users) unmarshaller.unmarshal(this.usersDB);
+            /* Sinceramente, un coñazo que se lance una excepción tan abstracta,
+              pero bueno, es lo que hay */
+        } catch (JAXBException e) {
+            throw new RuntimeJAXBException(e);
+        }
+        return users;
     }
 
     /**
@@ -172,6 +185,16 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
         userList.add(newUser);
         Users users = new Users(userList);
 
+        this.marshallUsers(users);
+        return newUser;
+    }
+
+    /**
+     * Serializa una instancia de Users en formato XML en la BBDD
+     *
+     * @param users las usuarios a serializar
+     */
+    private void marshallUsers(Users users) {
         try {
             Marshaller marshaller = this.jaxbContext.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
@@ -179,7 +202,6 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
         } catch (JAXBException e) {
             throw new RuntimeException(e);
         }
-        return newUser;
     }
 
     private boolean userExists(String username, String password){
@@ -209,14 +231,7 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
         usersList.remove(userToDelete);
 
         Users users = new Users(usersList);
-
-        try {
-            Marshaller marshaller = this.jaxbContext.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            marshaller.marshal(users, this.usersDB);
-        } catch (JAXBException e) {
-            throw new RuntimeException(e);
-        }
+        this.marshallUsers(users);
     }
 
 
