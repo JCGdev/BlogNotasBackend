@@ -96,6 +96,8 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
      * Lee los usuarios de de la BBDD XML y las deserializa en
      * objetos User, contenidos en un objeto Users, que actúa
      * como wrapper.
+     * Este método adquiere el candado intrínsico y bloquea el objeto para
+     * otros hilos, lo que evita problemas de concurrencia.
      *
      * @return Los usuarios contenidas en una instancia Users
      */
@@ -103,7 +105,9 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
         Users users;
         try {
             Unmarshaller unmarshaller = this.jaxbContext.createUnmarshaller();
-            users = (Users) unmarshaller.unmarshal(this.usersDB);
+            synchronized(this) {
+                users = (Users) unmarshaller.unmarshal(this.usersDB);
+            }
             /* Sinceramente, un coñazo que se lance una excepción tan abstracta,
               pero bueno, es lo que hay */
         } catch (JAXBException e) {
@@ -191,6 +195,8 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
 
     /**
      * Serializa una instancia de Users en formato XML en la BBDD
+     * Este método adquiere el candado intrínsico y bloquea el objeto para
+     * otros hilos, lo que evita problemas de concurrencia.
      *
      * @param users las usuarios a serializar
      */
@@ -198,7 +204,9 @@ public class XMLUsersDatabaseManager implements UserDatabaseManager {
         try {
             Marshaller marshaller = this.jaxbContext.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            marshaller.marshal(users, this.usersDB);
+            synchronized(this){
+                marshaller.marshal(users, this.usersDB);
+            }
         } catch (JAXBException e) {
             throw new RuntimeException(e);
         }

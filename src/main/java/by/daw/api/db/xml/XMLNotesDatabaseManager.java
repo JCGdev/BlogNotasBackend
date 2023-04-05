@@ -116,8 +116,9 @@ public class XMLNotesDatabaseManager implements NotesDatabaseManager {
 
     /**
      * Lee las notas de de la BBDD XML y las deserializa en
-     * objetos Note, contenidos en un objeto Notes, que actúa
-     * como wrapper.
+     * objetos Note, contenidos en un objeto Notes, que actúa como wrapper.
+     * Este método adquiere el candado intrínsico y bloquea el objeto para
+     * otros hilos, lo que evita problemas de concurrencia.
      *
      * @return Las notas contenidas en una instancia Notes
      */
@@ -125,7 +126,9 @@ public class XMLNotesDatabaseManager implements NotesDatabaseManager {
         Notes notes;
         try {
             Unmarshaller unmarshaller = this.jaxbContext.createUnmarshaller();
-            notes = (Notes) unmarshaller.unmarshal(this.notesDB);
+            synchronized(this) {
+                notes = (Notes) unmarshaller.unmarshal(this.notesDB);
+            }
             /* Sinceramente, un coñazo que se lance una excepción tan abstracta,
               pero bueno, es lo que hay */
         } catch (JAXBException e) {
@@ -133,6 +136,7 @@ public class XMLNotesDatabaseManager implements NotesDatabaseManager {
         }
         return notes;
     }
+
 
     /**
      * Devuelve la nota con tal ID
@@ -189,6 +193,8 @@ public class XMLNotesDatabaseManager implements NotesDatabaseManager {
 
     /**
      * Serializa una instancia de Notes en formato XML en la BBDD
+     * Este método adquiere el candado intrínsico y bloquea el objeto para
+     * otros hilos, lo que evita problemas de concurrencia.
      *
      * @param notes las notas a serializar
      */
@@ -196,11 +202,14 @@ public class XMLNotesDatabaseManager implements NotesDatabaseManager {
         try {
             Marshaller marshaller = this.jaxbContext.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            marshaller.marshal(notes, this.notesDB);
+            synchronized(this) {
+                marshaller.marshal(notes, this.notesDB);
+            }
         } catch(JAXBException e){
             throw new RuntimeJAXBException(e);
         }
     }
+
 
     /**
      * Elimina una nota de la BBDD
